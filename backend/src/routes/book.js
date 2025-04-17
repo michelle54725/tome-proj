@@ -1,14 +1,25 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getFirestore } from "firebase-admin/firestore"
 import { BookFormatOptions, DatabaseID } from '../lib/constants.js';
+import fuzzysort from 'fuzzysort'
 
 export const book = async (fastify) => {
   await fastify.get(
     '/',
     {
       schema: {
-        description:
-          'Get all books',
+        description: 'Get books',
+        querystring: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'integer',
+            },
+            search: {
+              type: 'string',
+            },
+          },
+        },
         response: {
           '2xx': {
             description: 'Success',
@@ -31,7 +42,26 @@ export const book = async (fastify) => {
       },
     },
     async (request, reply) => {
-      return { books: [] };
+      const { limit: limitParam, search } = request.query;
+      const limit = limitParam ? parseInt(limitParam) : 10;
+
+      /**
+       * Tradeoff made here between latency+cost (fetching all books from db) and user 
+       * experience (fuzzy search). If this becomes a problem then we can implement
+       * advanced search features (by title, author, etc) to allow for specific queries
+       * e.g. `...whereGreaterThan("author", authorSearch.slice(0,1)).get()`
+       */
+      const bookCollection = await getFirestore(DatabaseID).collection('books').get();
+      const books = bookCollection.docs.map((doc) => doc.data());
+
+      const booksFiltered = search
+        ? fuzzysort.go(search, books, {
+          keys: ["title", "author"],
+          limit,
+        }).map((result) => result.obj)
+        : books.slice(0, limit);
+
+      return { books: booksFiltered };
     }
   );
 
