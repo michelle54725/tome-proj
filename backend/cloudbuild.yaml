@@ -1,0 +1,8 @@
+steps:
+  - name: 'node'
+    entrypoint: 'npm'
+    args: ['install']
+artifacts:
+  npmPackages:
+    - repository: 'https://us-east-1-npm.pkg.dev/deft-province-457116-c0/npm'
+      packagePath: '.'
