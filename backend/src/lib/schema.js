@@ -21,6 +21,10 @@ export const BookSchema = {
       enum: BookFormatOptions,
       description: `One of the emotion options: ${BookFormatOptions.join(', ')}.`,
     },
+    coverPhoto: {
+      type: 'string',
+      description: 'URL of cover photo'
+    },
     publishedAt: {
       type: 'integer',
     },
