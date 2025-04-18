@@ -97,6 +97,10 @@ export const book = async (fastify) => {
               format: 'date-time',
               description: 'Datetime of publication in ISO 8601'
             },
+            coverPhoto: {
+              type: 'string',
+              description: 'URL of cover photo'
+            }
           },
           required: ['title', 'author']
         },
@@ -113,7 +117,7 @@ export const book = async (fastify) => {
       },
     },
     async (request, reply) => {
-      const { title, author, format, publishedAt: publishedAtStr } = request.body;
+      const { title, author, format, publishedAt: publishedAtStr, coverPhoto } = request.body;
       // TODO: validate args
 
       const bookCollection = getFirestore(DatabaseID).collection('books');
@@ -124,6 +128,7 @@ export const book = async (fastify) => {
         title,
         author,
         format,
+        coverPhoto,
         publishedAt: Date.parse(publishedAtStr),
         createdAt: Date.now()
       }
