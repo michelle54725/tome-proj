@@ -46,7 +46,7 @@ export const book = async (fastify) => {
 
       // Sanitize query params (limits chosen arbitrarily)
       const limit = limitParam ? parseInt(limitParam) : 10;
-      const search = searchParam.length > 60 ? searchParam.slice(0, 60) : searchParam;
+      const search = searchParam && searchParam.length > 60 ? searchParam.slice(0, 60) : searchParam;
 
       // If no search string then just return the first N (where N = limit)
       if (!search) {
