@@ -42,8 +42,18 @@ export const book = async (fastify) => {
       },
     },
     async (request, reply) => {
-      const { limit: limitParam, search } = request.query;
+      const { limit: limitParam, search: searchParam } = request.query;
+
+      // Sanitize query params (limits chosen arbitrarily)
       const limit = limitParam ? parseInt(limitParam) : 10;
+      const search = searchParam.length > 60 ? searchParam.slice(0, 60) : searchParam;
+
+      // If no search string then just return the first N (where N = limit)
+      if (!search) {
+        const bookCollection = await getFirestore(DatabaseID).collection('books').limit(limit).get();
+        const books = bookCollection.docs.map((doc) => doc.data());
+        return { books: books.slice(0, limit) };
+      }
 
       /**
        * Tradeoff made here between latency+cost (fetching all books from db) and user 
@@ -51,15 +61,13 @@ export const book = async (fastify) => {
        * advanced search features (by title, author, etc) to allow for specific queries
        * e.g. `...whereGreaterThan("author", authorSearch.slice(0,1)).get()`
        */
-      const bookCollection = await getFirestore(DatabaseID).collection('books').get();
+      const bookCollection = await getFirestore(DatabaseID).collection('books').get()
       const books = bookCollection.docs.map((doc) => doc.data());
 
-      const booksFiltered = search
-        ? fuzzysort.go(search, books, {
-          keys: ["title", "author"],
-          limit,
-        }).map((result) => result.obj)
-        : books.slice(0, limit);
+      const booksFiltered = fuzzysort.go(search, books, {
+        keys: ["title", "author"],
+        limit,
+      }).map((result) => result.obj)
 
       return { books: booksFiltered };
     }

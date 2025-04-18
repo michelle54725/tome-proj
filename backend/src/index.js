@@ -73,8 +73,7 @@ async function start() {
 
   try {
     const server = await build();
-    const address = server.listen({ port, host });
-    console.log(`Listening on ${address}`);
+    server.listen({ port, host });
   } catch (err) {
     console.error(err);
     exit(1);
