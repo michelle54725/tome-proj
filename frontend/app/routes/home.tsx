@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
@@ -57,41 +57,80 @@ const formFields = [
 ];
 
 export default function Home() {
-  const data: Book[] = useMemo(() => {
-    return [...Array(5)].map(
-      (_, index) =>
-        ({
-          id: `${index}`,
-          title: `Test Book ${index}`,
-          author: `Author ${index}`,
-          format: "PRINT",
-          coverPhoto:
-            "https://assets.rebelmouse.io/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbWFnZSI6Imh0dHBzOi8vYXNzZXRzLnJibC5tcy80MTUzNTA1L29yaWdpbi5qcGciLCJleHBpcmVzX2F0IjoxNzg4MTU0MzU4fQ.9tgenEDjvGDotL9GwsmPKk1aBhVuxpt5GVjSITgU4rs/img.jpg?width=980",
-          publishedAt: 1735689600000,
-        } satisfies Book)
-    );
-  }, []);
+  const [data, setData] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = useCallback((input: FormData) => {
-    const title = input.get("title");
-    const author = input.get("author");
-    const format = input.get("format");
-    const coverPhoto = input.get("coverPhoto");
-    const publishedAt = input.get("publishedAt");
+  const onSubmit = useCallback(async (input: FormData) => {
+    const title = input.get("title")?.toString();
+    const author = input.get("author")?.toString();
+    const coverPhoto = input.get("coverPhoto")?.toString();
+    const _publishedAt = input.get("publishedAt")?.toString();
+    const publishedAt = _publishedAt ? new Date(_publishedAt) : null;
+    const format = input.get("format")?.toString();
 
     if (!title || !author) {
       alert("Error: must include title and author");
       return;
     }
 
-    alert(
-      `Title: ${title}\nAuthor: ${author} \nCoverPhoto: ${coverPhoto} \nFormat: ${format} \nPublished At: ${publishedAt}`
-    );
+    if (publishedAt !== null && isNaN(publishedAt.getTime())) {
+      alert(
+        "Error: Invalid date for Published At. Must be in YYYY-MM-DD format."
+      );
+      return;
+    }
+
+    const bookData = {
+      title,
+      author,
+      coverPhoto,
+      publishedAt,
+      format,
+    };
+
+    const res = await fetch(`${process.env.API_URL}/book/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bookData),
+    });
+
+    const book = await res.json();
+
+    alert(`Book added successfully:\n ${JSON.stringify(book, null, 2)}`);
   }, []);
 
-  const onSearch = useCallback((input: FormData) => {
-    const search = input.get("search");
-    alert(`Search: ${search}`);
+  const onSearch = useCallback(async (input: FormData) => {
+    try {
+      setLoading(true);
+      const search = input.get("search");
+      const res = await fetch(`${process.env.API_URL}/book?search=${search}`);
+      const data = await res.json();
+      setData(data.books);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const initialFetch = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${process.env.API_URL}/book`);
+        const data = await res.json();
+        if (data?.books) {
+          setData(data.books);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initialFetch();
   }, []);
 
   return (
@@ -118,29 +157,40 @@ export default function Home() {
       <form action={onSearch}>
         <label>
           Search
-          <input name="search" />
+          <input name="search" placeholder="empty search = all books" />
         </label>
         <button type="submit" className="border rounded-xl p-2">
           Search for book
         </button>
       </form>
 
-      <ul className="flex flex-wrap">
-        {data.map((book) => (
-          <li key={book.id} className="m-4 border rounded-sm p-4">
-            <p>Title: {book.title}</p>
-            <p>Author: {book.author}</p>
-            <p>Format: {book.format}</p>
-            <p>
-              Published At:{" "}
-              {`${new Date(book.publishedAt).toISOString().split("T")[0]}`}
-            </p>
-            <div style={{ height: 100, width: 100 }}>
-              <img src={book.coverPhoto} alt={book.title} />
-            </div>
-          </li>
-        ))}
-      </ul>
+      {loading && <p>Loading...</p>}
+      {data.length > 0 ? (
+        <ul className="flex flex-wrap">
+          {data.map((book) => (
+            <li key={book.id} className="m-4 border rounded-sm p-4">
+              <p>Title: {book.title}</p>
+              <p>Author: {book.author}</p>
+              <p>Format: {book.format}</p>
+              <p>
+                Published At:{" "}
+                {`${new Date(book.publishedAt).toISOString().split("T")[0]}`}
+              </p>
+              {book.coverPhoto ? (
+                <div style={{ height: 100, width: 100 }}>
+                  <img src={book.coverPhoto} alt={book.title} />
+                </div>
+              ) : (
+                <p style={{ fontSize: 12, color: "gray" }}>
+                  No cover photo found
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No books found</p>
+      )}
     </main>
   );
 }
