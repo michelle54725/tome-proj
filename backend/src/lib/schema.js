@@ -20,16 +20,20 @@ export const BookSchema = {
       type: 'string',
       enum: BookFormatOptions,
       description: `One of the emotion options: ${BookFormatOptions.join(', ')}.`,
+      nullable: true
     },
     coverPhoto: {
       type: 'string',
-      description: 'URL of cover photo'
+      description: 'URL of cover photo',
+      nullable: true
     },
     publishedAt: {
       type: 'integer',
+      nullable: true
     },
     createdAt: {
       type: 'integer',
+      nullable: true
     },
   },
   required: ['id', 'title', 'author'],

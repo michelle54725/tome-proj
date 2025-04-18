@@ -64,8 +64,10 @@ export default function Home() {
     const title = input.get("title")?.toString();
     const author = input.get("author")?.toString();
     const coverPhoto = input.get("coverPhoto")?.toString();
-    const _publishedAt = input.get("publishedAt")?.toString();
-    const publishedAt = _publishedAt ? new Date(_publishedAt) : null;
+    const _publishedAt = input.get("publishedAt");
+    const publishedAt = _publishedAt
+      ? new Date(_publishedAt.toString())
+      : undefined;
     const format = input.get("format")?.toString();
 
     if (!title || !author) {
@@ -73,7 +75,7 @@ export default function Home() {
       return;
     }
 
-    if (publishedAt !== null && isNaN(publishedAt.getTime())) {
+    if (publishedAt && isNaN(publishedAt.getTime())) {
       alert(
         "Error: Invalid date for Published At. Must be in YYYY-MM-DD format."
       );
@@ -95,10 +97,12 @@ export default function Home() {
       },
       body: JSON.stringify(bookData),
     });
-
-    const book = await res.json();
-
-    alert(`Book added successfully:\n ${JSON.stringify(book, null, 2)}`);
+    if (res.ok) {
+      const book = await res.json();
+      alert(`Book added successfully:\n ${JSON.stringify(book, null, 2)}`);
+    } else {
+      alert("Server error adding book:\n" + (await res.text()));
+    }
   }, []);
 
   const onSearch = useCallback(async (input: FormData) => {
@@ -165,21 +169,28 @@ export default function Home() {
       </form>
 
       {loading && <p>Loading...</p>}
-      {data.length > 0 ? (
+      {data && data.length > 0 ? (
         <ul className="flex flex-wrap">
           {data.map((book) => (
             <li key={book.id} className="m-4 border rounded-sm p-4">
               <p>Title: {book.title}</p>
               <p>Author: {book.author}</p>
               <p>Format: {book.format}</p>
-              <p>
-                Published At:{" "}
-                {`${new Date(book.publishedAt).toISOString().split("T")[0]}`}
-              </p>
+              {book.publishedAt ? (
+                <p>
+                  {`Published At: ${
+                    new Date(book.publishedAt).toISOString().split("T")[0]
+                  }`}
+                </p>
+              ) : (
+                <p>No publish info</p>
+              )}
               {book.coverPhoto ? (
-                <div style={{ height: 100, width: 100 }}>
-                  <img src={book.coverPhoto} alt={book.title} />
-                </div>
+                <img
+                  src={book.coverPhoto}
+                  alt={book.title}
+                  className="h-30 w-30 object-contain"
+                />
               ) : (
                 <p style={{ fontSize: 12, color: "gray" }}>
                   No cover photo found

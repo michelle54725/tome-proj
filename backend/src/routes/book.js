@@ -129,7 +129,7 @@ export const book = async (fastify) => {
         author,
         format,
         coverPhoto,
-        publishedAt: Date.parse(publishedAtStr),
+        publishedAt: publishedAtStr ? Date.parse(publishedAtStr) : null,
         createdAt: Date.now()
       }
 
