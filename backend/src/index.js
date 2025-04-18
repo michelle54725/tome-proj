@@ -1,10 +1,10 @@
 
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import { initializeApp } from 'firebase-admin/app';
 import { BookSchema, ErrorSchema } from './lib/schema.js'
 import { book } from './routes/book.js';
 import fastifyOpenapiDocs from 'fastify-openapi-docs'
-
 
 export const fastify = Fastify({
   trustProxy: true,
@@ -41,6 +41,9 @@ const build = async () => {
       }
     }
   })
+
+  // To enable localhost access
+  await fastify.register(cors, { origin: '*' });
 
   fastify.addHook('preHandler', async (req) => {
     const { body, params, log } = req;
