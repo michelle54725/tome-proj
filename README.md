@@ -6,7 +6,7 @@ This repository contains code for a REST API that allows anyone to add books to 
 
 ### Demo
 
-TODO
+From the `frontend/` directory: run `npm install` to install dependencies then `npm run dev` to run the React app at http://localhost:5173/.
 
 ### Server
 
