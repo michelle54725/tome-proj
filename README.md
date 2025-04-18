@@ -2,6 +2,12 @@
 
 This repository contains code for a REST API that allows anyone to add books to a database and search for them by title or author with a single query string, as well as an ugly React app for demo purposes.
 
+
+
+https://github.com/user-attachments/assets/17dfaa00-9387-44c6-b5b3-7f727ae991be
+
+
+
 ## Trying it out
 
 ### Demo
